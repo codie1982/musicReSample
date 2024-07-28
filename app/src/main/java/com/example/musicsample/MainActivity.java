@@ -1,6 +1,7 @@
 package com.example.musicsample;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
@@ -13,7 +14,10 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -32,6 +36,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PICK_AUDIO_REQUEST = 1;
+    private static final int REQUEST_PERMISSION = 100;
     private TextView textViewStatus,textViewPeakFrequency,textViewPeakMagnitude,textViewPeakData;
     private Button buttonSelectFile;
     private Uri audioFileUri;
@@ -54,11 +59,38 @@ public class MainActivity extends AppCompatActivity {
         buttonSelectFile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                selectedFile();
+                if (checkPermission()) {
+                    selectedFile();
+                } else {
+                    requestPermission();
+                }
             }
         });
     }
+    private boolean checkPermission() {
+        int result = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE);
+        return result == PackageManager.PERMISSION_GRANTED;
+    }
 
+    private void requestPermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            // Kullanıcı daha önce bu izni reddetti, bir açıklama göster.
+            textViewStatus.setText("Bu uygulamanın çalışabilmesi için dosya okuma iznine ihtiyaç var.");
+        }
+        ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_PERMISSION);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                selectedFile();
+            } else {
+                textViewStatus.setText("Dosya okuma izni reddedildi.");
+            }
+        }
+    }
     private void selectedFile() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI);
         startActivityForResult(intent, PICK_AUDIO_REQUEST);
@@ -92,7 +124,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     private String[] getMetadata(Uri uri) {
-        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+
+            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
         mmr.setDataSource(this, uri);
         String sampleRate = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE);
         String channels = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_NUM_TRACKS);
