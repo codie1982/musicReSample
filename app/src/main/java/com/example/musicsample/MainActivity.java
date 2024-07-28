@@ -1,5 +1,6 @@
 package com.example.musicsample;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -39,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_PERMISSION = 100;
     private TextView textViewStatus,textViewPeakFrequency,textViewPeakMagnitude,textViewPeakData;
     private Button buttonSelectFile;
+    private CustomView customView;
     private Uri audioFileUri;
 
     @Override
@@ -55,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
         textViewPeakFrequency = findViewById(R.id.textViewPeakFrequency);
         textViewPeakMagnitude = findViewById(R.id.textViewPeakMagnitude);
         buttonSelectFile = findViewById(R.id.btnSelectedWave);
-        textViewPeakData = findViewById(R.id.textViewPeakData);
+        customView = findViewById(R.id.customView);
         buttonSelectFile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -68,16 +70,16 @@ public class MainActivity extends AppCompatActivity {
         });
     }
     private boolean checkPermission() {
-        int result = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE);
+        int result = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO);
         return result == PackageManager.PERMISSION_GRANTED;
     }
 
     private void requestPermission() {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_MEDIA_AUDIO)) {
             // Kullanıcı daha önce bu izni reddetti, bir açıklama göster.
             textViewStatus.setText("Bu uygulamanın çalışabilmesi için dosya okuma iznine ihtiyaç var.");
         }
-        ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_PERMISSION);
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_PERMISSION);
     }
 
     @Override
@@ -208,16 +210,19 @@ public class MainActivity extends AppCompatActivity {
             textViewStatus.setText("İşlem tamamlandı");
 
             // Pik frekans ve büyüklük verilerini metin olarak gösterme
-            StringBuilder peakDataText = new StringBuilder();
+            /*StringBuilder peakDataText = new StringBuilder();
             for (double[] peak : peakData) {
                 peakDataText.append("Frekans: ").append(peak[0]).append(" Hz, Büyüklük: ").append(peak[1]).append("\n");
             }
-            textViewPeakData.setText(peakDataText.toString());
+            textViewPeakData.setText(peakDataText.toString());*/
 
             if (!peakData.isEmpty()) {
                 double[] peakEntry = peakData.get(0);
                 textViewPeakFrequency.setText("Pik Frekans: " + peakEntry[0] + " Hz");
                 textViewPeakMagnitude.setText("Pik Değeri: " + peakEntry[1]);
+
+                // Pik verilerini CustomView'e iletme
+                customView.setPeakData(peakData);
             }
         }
     }
